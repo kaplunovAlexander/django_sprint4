@@ -23,7 +23,7 @@ from django.shortcuts import redirect
 from django.urls import path, include, reverse_lazy
 
 urlpatterns = [
-    path('posts/', include('blog.urls', namespace='blog')),
+    # path('posts/', include('blog.urls', namespace='blog')),
     path('', include('blog.urls')),
     # path('posts/', RedirectView.as_view(url='/', permanent=True)),
     # path(
