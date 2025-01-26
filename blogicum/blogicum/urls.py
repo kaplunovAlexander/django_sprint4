@@ -16,10 +16,8 @@ Including another URLconf
 from django.contrib import admin
 from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
-from django.views.generic import RedirectView
 from django.views.generic.edit import CreateView
 from django.conf.urls.static import static
-from django.shortcuts import redirect
 from django.urls import path, include, reverse_lazy
 
 urlpatterns = [
@@ -27,7 +25,7 @@ urlpatterns = [
     path('', include('blog.urls')),
     # path('posts/', RedirectView.as_view(url='/', permanent=True)),
     # path(
-    #     'posts/create/', lambda request: redirect('/create/', permanent=False)
+    #     'posts/create/', lambda request:redirect('/create/', permanent=False)
     # ),
     path('pages/', include('pages.urls', namespace='pages')),
     path('auth/', include('django.contrib.auth.urls')),

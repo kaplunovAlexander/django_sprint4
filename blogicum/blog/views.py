@@ -26,6 +26,7 @@ class PostListView(ListView):
     - Фильтрует опубликованные и доступные к просмотру публикации.
     - Добавляет аннотацию с количеством комментариев.
     """
+
     model = Post
     template_name = 'blog/index.html'
     ordering = '-pub_date'
@@ -51,6 +52,7 @@ class PostDetailView(DetailView):
     - Передает форму для комментариев в контекст.
     - Загружает список комментариев к публикации.
     """
+
     model = Post
     template_name = 'blog/detail.html'
 
@@ -80,6 +82,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     - Автоматически назначает текущего пользователя автором публикации.
     - После успешного создания перенаправляет на страницу профиля автора.
     """
+
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
@@ -102,6 +105,7 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     - Если доступ запрещен, перенаправляет на страницу публикации.
     - После успешного обновления перенаправляет обратно к публикации.
     """
+
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
@@ -124,6 +128,7 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
     - Если доступ запрещен, перенаправляет на страницу публикации.
     - После удаления перенаправляет на главную страницу.
     """
+
     model = Post
     template_name = 'blog/create.html'
     success_url = reverse_lazy('blog:index')
@@ -148,6 +153,7 @@ class ProfileView(ListView):
     - Отображает 10 публикаций пользователя на странице.
     - Добавляет аннотацию с количеством комментариев.
     """
+
     model = Post
     template_name = 'blog/profile.html'
     paginate_by = 10
@@ -176,6 +182,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     - После успешного обновления профиля происходит редирект на страницу
       профиля пользователя.
     """
+
     model = User
     form_class = MyUserChangeForm
     template_name = 'blog/user.html'
@@ -198,6 +205,7 @@ class CategoryListView(ListView):
     - Если категория снята с публикации, выбрасывает 404.
     - Загружает публикации категории, сортирует их по дате.
     """
+
     model = Category
     template_name = 'blog/category.html'
     paginate_by = 10
@@ -229,6 +237,7 @@ class AddCommentView(LoginRequiredMixin, CreateView):
     - После успешного добавления комментария происходит редирект на
       страницу публикации.
     """
+
     model = Comments
     form_class = CommentForm
     template_name = 'blog/detail.html'
@@ -254,6 +263,7 @@ class CommentUpdateView(LoginRequiredMixin, UpdateView):
     - После успешного обновления комментария происходит редирект на
       страницу публикации.
     """
+
     model = Comments
     form_class = CommentForm
     template_name = 'blog/comment.html'
@@ -302,6 +312,7 @@ class CommentDeleteView(LoginRequiredMixin, DeleteView):
     - После успешного удаления комментария происходит редирект
       на страницу публикации.
     """
+
     model = Comments
     template_name = 'blog/comment.html'
 

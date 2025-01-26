@@ -41,7 +41,9 @@ class PostForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pub_date:
-            self.fields['pub_date'].initial = localtime(self.instance.pub_date).strftime('%m/%d/%Y %H:%M')
+            self.fields['pub_date'].initial = localtime(
+                self.instance.pub_date
+            ).strftime('%m/%d/%Y %H:%M')
 
 
 class CommentForm(forms.ModelForm):
