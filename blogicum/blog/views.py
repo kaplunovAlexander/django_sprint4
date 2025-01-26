@@ -1,13 +1,10 @@
 from typing import Any
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models.base import Model as Model
 from django.db.models import Count
-from django.db.models.query import QuerySet
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from django.core.exceptions import PermissionDenied
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView
 )
@@ -21,6 +18,14 @@ User = get_user_model()
 
 
 class PostListView(ListView):
+    """
+    Представление для отображения списка публикаций.
+
+    - Отображает 10 публикаций на странице.
+    - Сортирует публикации по убыванию даты публикации.
+    - Фильтрует опубликованные и доступные к просмотру публикации.
+    - Добавляет аннотацию с количеством комментариев.
+    """
     model = Post
     template_name = 'blog/index.html'
     ordering = '-pub_date'
@@ -39,6 +44,13 @@ class PostListView(ListView):
 
 
 class PostDetailView(DetailView):
+    """
+    Представление для отображения деталей публикации.
+
+    - Проверяет доступность публикации перед отображением.
+    - Передает форму для комментариев в контекст.
+    - Загружает список комментариев к публикации.
+    """
     model = Post
     template_name = 'blog/detail.html'
 
@@ -61,6 +73,13 @@ class PostDetailView(DetailView):
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
+    """
+    Представление для создания новой публикации.
+
+    - Доступно только авторизованным пользователям.
+    - Автоматически назначает текущего пользователя автором публикации.
+    - После успешного создания перенаправляет на страницу профиля автора.
+    """
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
@@ -72,10 +91,17 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse('blog:profile', kwargs={
             'username': self.object.author.username
-                })
+        })
 
 
 class PostUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Представление для редактирования публикации.
+
+    - Доступно только автору публикации.
+    - Если доступ запрещен, перенаправляет на страницу публикации.
+    - После успешного обновления перенаправляет обратно к публикации.
+    """
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
@@ -91,6 +117,13 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class PostDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Представление для удаления публикации.
+
+    - Доступно только автору публикации.
+    - Если доступ запрещен, перенаправляет на страницу публикации.
+    - После удаления перенаправляет на главную страницу.
+    """
     model = Post
     template_name = 'blog/create.html'
     success_url = reverse_lazy('blog:index')
@@ -108,6 +141,13 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
 
 
 class ProfileView(ListView):
+    """
+    Представление для отображения профиля пользователя и его публикаций.
+
+    - Загружает профиль пользователя по username.
+    - Отображает 10 публикаций пользователя на странице.
+    - Добавляет аннотацию с количеством комментариев.
+    """
     model = Post
     template_name = 'blog/profile.html'
     paginate_by = 10
@@ -129,6 +169,13 @@ class ProfileView(ListView):
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Представление для обновления профиля пользователя.
+
+    - Доступ к представлению имеют только авторизованные пользователи.
+    - После успешного обновления профиля происходит редирект на страницу
+      профиля пользователя.
+    """
     model = User
     form_class = MyUserChangeForm
     template_name = 'blog/user.html'
@@ -137,10 +184,20 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         return self.request.user
 
     def get_success_url(self):
-        return reverse_lazy('blog:profile', kwargs={'username': self.object.username})
+        return reverse_lazy(
+            'blog:profile',
+            kwargs={'username': self.object.username}
+        )
 
 
 class CategoryListView(ListView):
+    """
+    Представление для отображения публикаций по категориям.
+
+    - Проверяет, опубликована ли категория.
+    - Если категория снята с публикации, выбрасывает 404.
+    - Загружает публикации категории, сортирует их по дате.
+    """
     model = Category
     template_name = 'blog/category.html'
     paginate_by = 10
@@ -165,6 +222,13 @@ class CategoryListView(ListView):
 
 
 class AddCommentView(LoginRequiredMixin, CreateView):
+    """
+    Представление для добавления комментария к публикации.
+
+    - Доступ к представлению имеют только авторизованные пользователи.
+    - После успешного добавления комментария происходит редирект на
+      страницу публикации.
+    """
     model = Comments
     form_class = CommentForm
     template_name = 'blog/detail.html'
@@ -183,13 +247,24 @@ class AddCommentView(LoginRequiredMixin, CreateView):
 
 
 class CommentUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Представление для редактирования комментария пользователя.
+
+    - Доступ к редактированию имеет только автор комментария.
+    - После успешного обновления комментария происходит редирект на
+      страницу публикации.
+    """
     model = Comments
     form_class = CommentForm
     template_name = 'blog/comment.html'
 
     def dispatch(self, request, *args, **kwargs):
         post = get_object_or_404(Post, pk=self.kwargs["post_id"])
-        comment = get_object_or_404(Comments, id=self.kwargs["comment_id"], post_id=post.pk)
+        comment = get_object_or_404(
+            Comments,
+            id=self.kwargs["comment_id"],
+            post_id=post.pk
+        )
         if comment.author != self.request.user:
             return redirect('blog:post_detail', pk=post.pk)
         return super().dispatch(request, *args, **kwargs)
@@ -213,16 +288,30 @@ class CommentUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'pk': self.kwargs["post_id"]})
+        return reverse(
+            'blog:post_detail',
+            kwargs={'pk': self.kwargs["post_id"]}
+        )
 
 
 class CommentDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Представление для удаления комментария пользователя.
+
+    - Доступ к удалению имеет только автор комментария.
+    - После успешного удаления комментария происходит редирект
+      на страницу публикации.
+    """
     model = Comments
     template_name = 'blog/comment.html'
 
     def dispatch(self, request, *args, **kwargs):
         post = get_object_or_404(Post, pk=self.kwargs["post_id"])
-        comment = get_object_or_404(Comments, id=self.kwargs["comment_id"], post_id=post.pk)
+        comment = get_object_or_404(
+            Comments,
+            id=self.kwargs["comment_id"],
+            post_id=post.pk
+        )
         if comment.author != self.request.user:
             return redirect('blog:post_detail', pk=post.pk)
         return super().dispatch(request, *args, **kwargs)
@@ -246,4 +335,7 @@ class CommentDeleteView(LoginRequiredMixin, DeleteView):
         return context
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'pk': self.kwargs["post_id"]})
+        return reverse(
+            'blog:post_detail',
+            kwargs={'pk': self.kwargs["post_id"]}
+        )
