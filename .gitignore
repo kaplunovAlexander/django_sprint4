@@ -150,3 +150,7 @@ media/
 
 sent_emails/
 
+# Статика, которую не надо коммитить
+static/
+static-dev/
+htm/

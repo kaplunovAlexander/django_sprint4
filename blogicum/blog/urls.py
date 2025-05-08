@@ -8,20 +8,22 @@ urlpatterns = [
     path('', views.PostListView.as_view(), name='index'),
     path('posts/create/', views.PostCreateView.as_view(), name='create_post'),
     path(
-        'posts/<int:pk>/', views.PostDetailView.as_view(), name='post_detail'
+        'posts/<int:post_id>/',
+        views.PostDetailView.as_view(),
+        name='post_detail'
     ),
     path(
-        'posts/<int:pk>/edit/',
+        'posts/<int:post_id>/edit/',
         views.PostUpdateView.as_view(),
         name='edit_post'
     ),
     path(
-        'posts/<int:pk>/delete/',
+        'posts/<int:post_id>/delete/',
         views.PostDeleteView.as_view(),
         name='delete_post'
     ),
     path(
-        'posts/<int:pk>/add_comment/',
+        'posts/<int:post_id>/add_comment/',
         views.AddCommentView.as_view(),
         name='add_comment'
     ),
@@ -36,7 +38,7 @@ urlpatterns = [
         name='delete_comment'
     ),
     path(
-        'category/<slug:slug>/',
+        'category/<slug:category_slug>/',
         views.CategoryListView.as_view(),
         name='category_posts'
     ),

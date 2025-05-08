@@ -58,7 +58,7 @@ class PostDetailView(DetailView):
 
     def get_object(self):
 
-        obj = get_object_or_404(Post, pk=self.kwargs.get('pk'))
+        obj = get_object_or_404(Post, pk=self.kwargs['post_id'])
 
         if not obj.is_viewable(timezone.now(), self.request.user):
             raise Http404("Публикация не найдена.")
@@ -109,15 +109,17 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
+    pk_url_kwarg = 'post_id'
 
     def dispatch(self, request, *args, **kwargs):
-        post = get_object_or_404(Post, pk=self.kwargs["pk"])
+        post = get_object_or_404(Post, pk=self.kwargs["post_id"])
         if post.author != self.request.user:
-            return redirect('blog:post_detail', pk=post.pk)
+            return redirect('blog:post_detail', post_id=post.pk)
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'pk': self.kwargs["pk"]})
+        return reverse(
+            'blog:post_detail', kwargs={'post_id': self.kwargs["post_id"]})
 
 
 class PostDeleteView(LoginRequiredMixin, DeleteView):
@@ -132,11 +134,12 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
     model = Post
     template_name = 'blog/create.html'
     success_url = reverse_lazy('blog:index')
+    pk_url_kwarg = 'post_id'
 
     def dispatch(self, request, *args, **kwargs):
-        post = get_object_or_404(Post, pk=self.kwargs["pk"])
+        post = get_object_or_404(Post, pk=self.kwargs["post_id"])
         if post.author != self.request.user:
-            return redirect('blog:post_detail', pk=post.pk)
+            return redirect('blog:post_detail', post_id=post.pk)
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -163,15 +166,32 @@ class ProfileView(ListView):
         context['profile'] = self.profile
         return context
 
+    @staticmethod
+    def filter_published_posts(queryset, user=None, author=None):
+        now = timezone.now()
+        if user == author:
+            return queryset
+        return queryset.filter(
+            is_published=True,
+            pub_date__lte=now,
+            category__is_published=True
+        )
+
     def get_queryset(self):
         self.profile = get_object_or_404(
             User, username=self.kwargs['username']
         )
-        return Post.objects.filter(
+        queryset = Post.objects.filter(
             author=self.profile
         ).annotate(
             comment_count=Count('comments')
-        ).order_by('-pub_date')
+        ).order_by(*Post._meta.ordering)
+
+        return self.filter_published_posts(
+            queryset=queryset,
+            user=self.request.user,
+            author=self.profile
+        )
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -211,7 +231,8 @@ class CategoryListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        self.category = get_object_or_404(Category, slug=self.kwargs['slug'])
+        self.category = get_object_or_404(
+            Category, slug=self.kwargs['category_slug'])
 
         if not self.category.is_published:
             raise Http404('Категория снята с публикации')
@@ -221,7 +242,7 @@ class CategoryListView(ListView):
             is_published=True,
         ).annotate(
             comment_count=Count('comments')
-        ).order_by('-pub_date')
+        ).order_by(*Post._meta.ordering)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -243,16 +264,17 @@ class AddCommentView(LoginRequiredMixin, CreateView):
     template_name = 'blog/detail.html'
 
     def form_valid(self, form):
-        post = get_object_or_404(Post, pk=self.kwargs['pk'])
+        post = get_object_or_404(Post, pk=self.kwargs['post_id'])
         form.instance.author = self.request.user
         form.instance.post = post
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        return redirect('blog:post_detail', pk=self.kwargs['pk'])
+        return redirect('blog:post_detail', post_id=self.kwargs['post_id'])
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'pk': self.kwargs['pk']})
+        return reverse(
+            'blog:post_detail', kwargs={'post_id': self.kwargs['post_id']})
 
 
 class CommentUpdateView(LoginRequiredMixin, UpdateView):
@@ -276,7 +298,7 @@ class CommentUpdateView(LoginRequiredMixin, UpdateView):
             post_id=post.pk
         )
         if comment.author != self.request.user:
-            return redirect('blog:post_detail', pk=post.pk)
+            return redirect('blog:post_detail', post_id=post.pk)
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self):
@@ -300,7 +322,7 @@ class CommentUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse(
             'blog:post_detail',
-            kwargs={'pk': self.kwargs["post_id"]}
+            kwargs={'post_id': self.kwargs["post_id"]}
         )
 
 
@@ -324,7 +346,7 @@ class CommentDeleteView(LoginRequiredMixin, DeleteView):
             post_id=post.pk
         )
         if comment.author != self.request.user:
-            return redirect('blog:post_detail', pk=post.pk)
+            return redirect('blog:post_detail', post_id=post.pk)
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self):
@@ -348,5 +370,5 @@ class CommentDeleteView(LoginRequiredMixin, DeleteView):
     def get_success_url(self):
         return reverse(
             'blog:post_detail',
-            kwargs={'pk': self.kwargs["post_id"]}
+            kwargs={'post_id': self.kwargs["post_id"]}
         )
